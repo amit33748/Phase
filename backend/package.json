@@ -1,0 +1,17 @@
+{
+  "name": "phase-los-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PHASE PSInSAR API: GeoParquet queries with DuckDB, static GPU buffers",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/api.test.js"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "^1.4.1-r.1",
+    "compression": "^1.8.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}

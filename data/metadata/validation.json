@@ -1,0 +1,13 @@
+{
+ "rows_in": 2617185,
+ "rows_out": 2617185,
+ "nan_rows": 0,
+ "sample_roundtrip_max_abs_diff": {
+  "vel_avg": 1.8505859387119017e-06,
+  "last_epoch": 1.401367188691438e-05,
+  "joined_rows": 1000
+ },
+ "corr_vel_avg_vs_fit": 0.9992569739624548,
+ "geometry_type": "POINT",
+ "passed": true
+}
