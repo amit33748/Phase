@@ -1,10 +1,11 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 frontend/node_modules/
 backend/node_modules/
 
 # Build outputs
 frontend/dist/
+frontend/public/api/
 dist/
 build/
 

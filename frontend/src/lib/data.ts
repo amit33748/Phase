@@ -40,9 +40,19 @@ export interface HexCell {
 export interface HexSet { res: number; cells: HexCell[]; series: Int16Array; epochs: number }
 
 export async function fetchMeta(): Promise<Meta> {
-  const r = await fetch(`${API}/meta`);
-  if (!r.ok) throw new Error(`meta ${r.status}`);
-  return r.json();
+  let r = await fetch(`${API}/meta`);
+  let text = '';
+  if (!r.ok || r.headers.get('content-type')?.includes('text/html')) {
+    const r2 = await fetch(`${API}/meta.json`);
+    if (r2.ok) r = r2;
+  }
+  text = await r.text();
+  if (text.trim().startsWith('<')) {
+    const r3 = await fetch('/api/meta.json');
+    if (r3.ok) return r3.json();
+    throw new Error('API returned HTML instead of JSON. Ensure backend is running or static data is deployed.');
+  }
+  return JSON.parse(text);
 }
 
 /**

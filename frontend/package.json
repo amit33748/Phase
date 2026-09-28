@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "prebuild": "node scripts/copy-data.cjs",
+    "build": "node scripts/copy-data.cjs && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

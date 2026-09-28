@@ -5,6 +5,14 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/meta",
+      "destination": "/api/meta.json"
+    },
+    {
+      "source": "/api/web/:name",
+      "destination": "/api/web/:name"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
