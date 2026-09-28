@@ -68,28 +68,35 @@ export async function loadBase(meta: Meta, onBatch: (b: Base, fraction: number) 
     positions: new Float32Array(2 * n), vel: new Float32Array(n), accel: new Float32Array(n),
     seas: new Float32Array(n), quality: new Float32Array(n), dup: new Uint8Array(n), filter: new Float32Array(2 * n)
   };
-  let res = await fetch(`${API}/web/base.arrow`);
-  if (!res.ok || !res.body || res.headers.get('content-type')?.includes('text/html')) {
-    res = await fetch('/api/web/base.arrow');
-    if (!res.ok || !res.body || res.headers.get('content-type')?.includes('text/html')) {
-      res = await fetch('/web/base.arrow');
+  const urls = [`${API}/web/base.arrow`, '/api/web/base.arrow', '/web/base.arrow'];
+  let buf: Uint8Array | null = null;
+  for (const u of urls) {
+    try {
+      const res = await fetch(u);
+      if (res.ok && !res.headers.get('content-type')?.includes('text/html')) {
+        buf = new Uint8Array(await res.arrayBuffer());
+        if (buf.byteLength > 1000) break;
+      }
+    } catch {
+      // try next
     }
   }
-  if (!res.ok || !res.body) throw new Error(`base.arrow ${res.status}`);
-  const reader = await RecordBatchReader.from(res.body as any);
+  if (!buf) throw new Error('Failed to load base.arrow point buffer');
+
+  const table = tableFromIPC(buf);
   let ilon = 0;
   let ilat = 0;
   const vs = 1 / meta.vel_scale;
   const as = 1 / meta.accel_scale;
   const ss = 1 / meta.seas_scale;
-  for await (const batch of reader as any) {
-    const dlon = batch.getChild('dlon').toArray() as Int32Array;
-    const dlat = batch.getChild('dlat').toArray() as Int32Array;
-    const vel = batch.getChild('vel').toArray() as Int16Array;
-    const accel = batch.getChild('accel').toArray() as Int16Array;
-    const seas = batch.getChild('seas').toArray() as Uint8Array;
-    const q = batch.getChild('quality').toArray() as Uint8Array;
-    const dup = batch.getChild('dup').toArray() as Uint8Array;
+  for (const batch of table.batches) {
+    const dlon = batch.getChild('dlon')!.toArray() as Int32Array;
+    const dlat = batch.getChild('dlat')!.toArray() as Int32Array;
+    const vel = batch.getChild('vel')!.toArray() as Int16Array;
+    const accel = batch.getChild('accel')!.toArray() as Int16Array;
+    const seas = batch.getChild('seas')!.toArray() as Uint8Array;
+    const q = batch.getChild('quality')!.toArray() as Uint8Array;
+    const dup = batch.getChild('dup')!.toArray() as Uint8Array;
     const off = base.loaded;
     for (let i = 0; i < dlon.length; i++) {
       const j = off + i;
@@ -118,14 +125,21 @@ const hexCache = new Map<number, Promise<HexSet>>();
 export function loadHex(res: number): Promise<HexSet> {
   if (!hexCache.has(res)) {
     hexCache.set(res, (async () => {
-      let r = await fetch(`${API}/web/hex_r${res}.arrow`);
-      if (!r.ok || r.headers.get('content-type')?.includes('text/html')) {
-        r = await fetch(`/api/web/hex_r${res}.arrow`);
-        if (!r.ok || r.headers.get('content-type')?.includes('text/html')) {
-          r = await fetch(`/web/hex_r${res}.arrow`);
+      const urls = [`${API}/web/hex_r${res}.arrow`, `/api/web/hex_r${res}.arrow`, `/web/hex_r${res}.arrow`];
+      let buf: Uint8Array | null = null;
+      for (const u of urls) {
+        try {
+          const r = await fetch(u);
+          if (r.ok && !r.headers.get('content-type')?.includes('text/html')) {
+            buf = new Uint8Array(await r.arrayBuffer());
+            if (buf.byteLength > 100) break;
+          }
+        } catch {
+          // try next
         }
       }
-      const table = tableFromIPC(new Uint8Array(await r.arrayBuffer()));
+      if (!buf) throw new Error(`Failed to load hex_r${res}.arrow`);
+      const table = tableFromIPC(buf);
       const col = (k: string) => table.getChild(k)!.toArray();
       const h3 = table.getChild('h3')!.toArray() as string[];
       const n = col('n'); const vel = col('vel_mean'); const p10 = col('vel_p10'); const p90 = col('vel_p90');
