@@ -97,10 +97,13 @@ export function ProfilePanel() {
   const profile = useStore((s) => s.profile);
   const theme = useStore((s) => s.theme);
   const ranges = useStore((s) => s.ranges);
+  const cmapChoice = useStore((s) => s.cmapChoice);
+  const cmapFlip = useStore((s) => s.cmapFlip);
+  const classes = useStore((s) => s.classes);
   const set = useStore((s) => s.set);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [hover, setHover] = useState<number | null>(null);
-  const spec = colorSpec({ ...state, mode: 'velocity' });
+  const spec = colorSpec({ theme, mode: 'velocity', cmapChoice, cmapFlip, classes });
   const [lo, hi] = ranges.velocity;
   const W = 340;
   const H = 200;

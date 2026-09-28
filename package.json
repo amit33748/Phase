@@ -1,0 +1,13 @@
+﻿{
+  "name": "phase-los-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PHASE PSInSAR LOS deformation explorer",
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend start",
+    "start": "npm --prefix backend start",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install"
+  }
+}
