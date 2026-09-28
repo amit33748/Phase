@@ -40,19 +40,21 @@ export interface HexCell {
 export interface HexSet { res: number; cells: HexCell[]; series: Int16Array; epochs: number }
 
 export async function fetchMeta(): Promise<Meta> {
-  let r = await fetch(`${API}/meta`);
-  let text = '';
-  if (!r.ok || r.headers.get('content-type')?.includes('text/html')) {
-    const r2 = await fetch(`${API}/meta.json`);
-    if (r2.ok) r = r2;
+  const urls = [`${API}/meta.json`, `${API}/meta`, '/api/meta.json', '/meta.json'];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) {
+        const text = await r.text();
+        if (!text.trim().startsWith('<')) {
+          return JSON.parse(text);
+        }
+      }
+    } catch {
+      // try next url
+    }
   }
-  text = await r.text();
-  if (text.trim().startsWith('<')) {
-    const r3 = await fetch('/api/meta.json');
-    if (r3.ok) return r3.json();
-    throw new Error('API returned HTML instead of JSON. Ensure backend is running or static data is deployed.');
-  }
-  return JSON.parse(text);
+  throw new Error('API unreachable: could not load meta.json configuration.');
 }
 
 /**
@@ -66,7 +68,13 @@ export async function loadBase(meta: Meta, onBatch: (b: Base, fraction: number) 
     positions: new Float32Array(2 * n), vel: new Float32Array(n), accel: new Float32Array(n),
     seas: new Float32Array(n), quality: new Float32Array(n), dup: new Uint8Array(n), filter: new Float32Array(2 * n)
   };
-  const res = await fetch(`${API}/web/base.arrow`);
+  let res = await fetch(`${API}/web/base.arrow`);
+  if (!res.ok || !res.body || res.headers.get('content-type')?.includes('text/html')) {
+    res = await fetch('/api/web/base.arrow');
+    if (!res.ok || !res.body || res.headers.get('content-type')?.includes('text/html')) {
+      res = await fetch('/web/base.arrow');
+    }
+  }
   if (!res.ok || !res.body) throw new Error(`base.arrow ${res.status}`);
   const reader = await RecordBatchReader.from(res.body as any);
   let ilon = 0;
@@ -110,7 +118,13 @@ const hexCache = new Map<number, Promise<HexSet>>();
 export function loadHex(res: number): Promise<HexSet> {
   if (!hexCache.has(res)) {
     hexCache.set(res, (async () => {
-      const r = await fetch(`${API}/web/hex_r${res}.arrow`);
+      let r = await fetch(`${API}/web/hex_r${res}.arrow`);
+      if (!r.ok || r.headers.get('content-type')?.includes('text/html')) {
+        r = await fetch(`/api/web/hex_r${res}.arrow`);
+        if (!r.ok || r.headers.get('content-type')?.includes('text/html')) {
+          r = await fetch(`/web/hex_r${res}.arrow`);
+        }
+      }
       const table = tableFromIPC(new Uint8Array(await r.arrayBuffer()));
       const col = (k: string) => table.getChild(k)!.toArray();
       const h3 = table.getChild('h3')!.toArray() as string[];
