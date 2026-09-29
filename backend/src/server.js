@@ -43,7 +43,7 @@ async function main() {
     res.status(500).json({ error: 'internal error' });
   });
 
-  app.listen(PORT, () => console.log(`[PHASE] API on http://localhost:${PORT}/api (ready in ${Date.now() - t0} ms)`));
+  app.listen(PORT, '0.0.0.0', () => console.log(`[PHASE] API on http://localhost:${PORT}/api (ready in ${Date.now() - t0} ms)`));
 }
 
 main().catch((err) => {
